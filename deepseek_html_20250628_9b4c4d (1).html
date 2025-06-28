@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分组柱状图数据可视化</title>
+    <script src="https://gw.alipayobjects.com/os/lib/antv/g2plot/0.11.3/dist/g2plot.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+            transform: translateY(-5px);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-header h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn i {
+            font-size: 0.9rem;
+        }
+        
+        #chart {
+            height: 500px;
+            width: 100%;
+        }
+        
+        .data-info {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 25px;
+        }
+        
+        .data-info h3 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            background: #e9ecef;
+            transform: translateY(-3px);
+        }
+        
+        .stat-card h4 {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th {
+            background: #f1f2f6;
+            padding: 12px;
+            text-align: left;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table tr:hover td {
+            background: #f8f9fa;
+        }
+        
+        .highlight {
+            background-color: #e3f2fd;
+            font-weight: 600;
+        }
+        
+        .summary {
+            margin-top: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+        
+        .summary h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .insight-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .insight-card:hover {
+            background: #e9ecef;
+            transform: translateY(-5px);
+        }
+        
+        .insight-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .insight-card h3 i {
+            color: #3498db;
+            font-size: 1.4rem;
+        }
+        
+        .insight-card p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #7f8c8d;
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        
+        .color-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .store1-color {
+            background: #5B8FF9;
+        }
+        
+        .store2-color {
+            background: #5AD8A6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-bar"></i> 零售数据可视化分析</h1>
+            <p>通过分组柱状图展示不同门店在各商品类别上的销售数据对比，帮助您发现销售趋势和业务洞察</p>
+        </header>
+        
+        <div class="dashboard">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2>门店销售数据对比</h2>
+                    <div class="chart-controls">
+                        <button class="btn" id="reset-btn">
+                            <i class="fas fa-sync"></i> 重置视图
+                        </button>
+                        <button class="btn" id="export-btn">
+                            <i class="fas fa-download"></i> 导出图片
+                        </button>
+                    </div>
+                </div>
+                <div id="chart"></div>
+                <div class="color-indicator">
+                    <div class="color-box store1-color"></div>
+                    <span>门店一</span>
+                    <div class="color-box store2-color"></div>
+                    <span>门店二</span>
+                </div>
+            </div>
+            
+            <div class="data-info">
+                <h3>数据摘要</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>总销售额</h4>
+                        <div class="value">6,304</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>数据条目</h4>
+                        <div class="value">14</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>门店一最高</h4>
+                        <div class="value">粮油副食</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>门店二最高</h4>
+                        <div class="value">母婴用品</div>
+                    </div>
+                </div>
+                
+                <h3>销售数据表</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>商品类别</th>
+                            <th>门店</th>
+                            <th>销售额</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>粮油副食</td>
+                            <td>门店一</td>
+                            <td class="highlight">834</td>
+                        </tr>
+                        <tr>
+                            <td>母婴用品</td>
+                            <td>门店二</td>
+                            <td class="highlight">950</td>
+                        </tr>
+                        <tr>
+                            <td>家庭清洁</td>
+                            <td>门店一</td>
+                            <td>858</td>
+                        </tr>
+                        <tr>
+                            <td>家庭清洁</td>
+                            <td>门店二</td>
+                            <td>793</td>
+                        </tr>
+                        <tr>
+                            <td>家具家电</td>
+                            <td>门店二</td>
+                            <td>550</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <h2>数据分析洞察</h2>
+            <div class="insights">
+                <div class="insight-card">
+                    <h3><i class="fas fa-lightbulb"></i> 关键发现</h3>
+                    <p>门店一在粮油副食和家庭清洁类别上表现优异，而门店二在母婴用品和美容洗护类别上占据优势。这种差异可能反映了不同门店周边客户群体的特征差异。</p>
+                </div>
+                <div class="insight-card">
+                    <h3><i class="fas fa-exclamation-triangle"></i> 需关注问题</h3>
+                    <p>进口食品和食品饮料类别在两个门店的销售额都较低，尤其是门店二在进口食品类别仅售出50单位。需要调查这些类别销售不佳的原因，考虑调整商品组合或营销策略。</p>
+                </div>
+                <div class="insight-card">
+                    <h3><i class="fas fa-chart-line"></i> 增长机会</h3>
+                    <p>母婴用品在门店二表现突出（950单位），但在门店一仅有481单位。建议分析门店一的母婴用品销售策略，复制门店二的成功经验，提升整体销售业绩。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2023 零售数据分析平台 | 数据更新时间: 2023年11月15日</p>
+        </div>
+    </div>
+
+    <script>
+        // 图表数据
+        const data = [
+          { "x": "家具家电", "type": "门店一", "y": 233 },
+          { "x": "家具家电", "type": "门店二", "y": 550 },
+          { "x": "粮油副食", "type": "门店一", "y": 834 },
+          { "x": "粮油副食", "type": "门店二", "y": 152 },
+          { "x": "美容洗护", "type": "门店一", "y": 63 },
+          { "x": "美容洗护", "type": "门店二", "y": 602 },
+          { "x": "母婴用品", "type": "门店一", "y": 481 },
+          { "x": "母婴用品", "type": "门店二", "y": 950 },
+          { "x": "进口食品", "type": "门店一", "y": 256 },
+          { "x": "进口食品", "type": "门店二", "y": 50 },
+          { "x": "食品饮料", "type": "门店一", "y": 43 },
+          { "x": "食品饮料", "type": "门店二", "y": 10 },
+          { "x": "家庭清洁", "type": "门店一", "y": 858 },
+          { "x": "家庭清洁", "type": "门店二", "y": 793 }
+        ];
+        
+        // 图表配置
+        const config = {
+          "title": {
+            "visible": true,
+            "text": "门店销售对比分析"
+          },
+          "description": {
+            "visible": true,
+            "text": "按商品类别分组展示两个门店的销售数据"
+          },
+          "legend": {
+            "flipPage": false,
+            "position": "top-right"
+          },
+          "xAxis": {
+            "title": {
+              "visible": false
+            },
+            "label": {
+              "autoHide": true,
+              "autoRotate": false
+            }
+          },
+          "yAxis": {
+            "title": {
+              "visible": false
+            },
+            "grid": {
+              "line": {
+                "style": {
+                  "stroke": "#eee",
+                  "lineDash": [3, 3]
+                }
+              }
+            }
+          },
+          "forceFit": true,
+          "width": document.getElementById('chart').offsetWidth,
+          "height": 500,
+          "xField": "x",
+          "yField": "y",
+          "groupField": "type",
+          "color": ["#5B8FF9", "#5AD8A6"],
+          "columnStyle": {
+            "radius": [4, 4, 0, 0]
+          },
+          "label": {
+            "position": "top",
+            "style": {
+              "fill": "#555",
+              "fontSize": 12
+            }
+          },
+          "interactions": [{ "type": "element-active" }, { "type": "tooltip" }]
+        };
+        
+        // 渲染图表
+        const plot = new g2plot.GroupColumn('chart', {
+          data,
+          ...config,
+        });
+        
+        plot.render();
+        
+        // 添加响应式功能
+        window.addEventListener('resize', () => {
+          plot.changeSize(document.getElementById('chart').offsetWidth, 500);
+        });
+        
+        // 添加按钮交互
+        document.getElementById('reset-btn').addEventListener('click', () => {
+          plot.setState('active', (d) => {
+            return false;
+          });
+        });
+        
+        document.getElementById('export-btn').addEventListener('click', () => {
+          plot.downloadImage();
+          alert('图表已导出为图片！');
+        });
+        
+        // 添加悬停效果
+        const rows = document.querySelectorAll('.data-table tr');
+        rows.forEach(row => {
+            row.addEventListener('mouseover', function() {
+                const category = this.cells[0].textContent;
+                plot.setState('active', (d) => {
+                    return d.x === category;
+                });
+            });
+            
+            row.addEventListener('mouseout', function() {
+                plot.setState('active', (d) => {
+                    return false;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
